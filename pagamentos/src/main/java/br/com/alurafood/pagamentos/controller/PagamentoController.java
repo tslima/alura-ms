@@ -5,6 +5,7 @@ import java.net.URI;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -31,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class PagamentoController {
 
 	private final PagamentoService service;
+	
+	private final RabbitTemplate rabbitTemplate;
 
 
 	@GetMapping
@@ -50,7 +53,9 @@ public class PagamentoController {
 	public ResponseEntity<PagamentoDto> cadastrar(@RequestBody @Valid PagamentoDto dto, UriComponentsBuilder uriBuilder) {
 		PagamentoDto pagamento = service.criarPagamento(dto);
 		URI endereco = uriBuilder.path("/pagamentos/{id}").buildAndExpand(pagamento.getId()).toUri();
-
+		
+		
+		rabbitTemplate.convertAndSend("pagamentos.ex","", pagamento);
 		return ResponseEntity.created(endereco).body(pagamento);
 	}
 
